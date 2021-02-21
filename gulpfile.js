@@ -5,6 +5,7 @@ const newer = require("gulp-newer");
 const imagemin = require("gulp-imagemin");
 const replace = require('gulp-replace');
 const uglify = require('gulp-uglify');
+const del = require('del');
 const fs = require('fs');
 
 var fileContent = fs.readFileSync("src/img/bighead.svg", "utf8");
@@ -16,12 +17,6 @@ function browserSync(done) {
     },
     port: 3000
   });
-  done();
-}
-
-// BrowserSync Reload
-function browserSyncReload(done) {
-  browsersync.reload();
   done();
 }
 
@@ -49,7 +44,7 @@ function compilaJavascript() {
     .pipe(browsersync.stream());
 }
 
-function images() {
+function copiaImagens() {
   return gulp
     .src("./src/img/**/*")
     .pipe(newer("./dist/img"))
@@ -70,14 +65,21 @@ function images() {
     .pipe(gulp.dest("./dist/img"));
 }
 
+function clean() {
+  return del('./dist/');
+}
+
 
 function watchFiles() {
   gulp.watch('src/scss/**/*.scss', compilaSass);
   gulp.watch('src/**/*.html', compilaHtml);
   gulp.watch('src/js/**/*', compilaJavascript);
-  gulp.watch('src/img/**/*', images);
+  gulp.watch('src/img/**/*', copiaImagens);
 }
 
-const watch = gulp.parallel(watchFiles, browserSync);
 
-exports.default = watch;
+const build = gulp.series(clean, gulp.parallel(compilaHtml, compilaJavascript, compilaSass, copiaImagens))
+const watch = gulp.series(build, gulp.parallel(watchFiles, browserSync));
+
+exports.default = build;
+exports.watch = watch;
